@@ -2,7 +2,7 @@
 
 (function () {
   const fetchURLContent = function (request, sender, sendResponse) {
-    console.log('[Background Fetch] Fetching ' + request.url + '...')
+    console.log('[Search Mirror] Fetching ' + request.url + '...')
 
     if (request.content === 'fetch_url_content') {
       const url = request.url
@@ -12,7 +12,7 @@
       })
         .then(response => response.text())
         .then(function (textBody) {
-          console.log('[Background Fetch] Fetched: ' + textBody)
+          console.log('[Search Mirror] Fetched: ' + textBody)
 
           sendResponse(textBody)
         })
@@ -51,12 +51,11 @@
       addRules: [stripRule]
     }, () => {
       if (chrome.runtime.lastError) {
-        console.log('[Background Fetch] ' + chrome.runtime.lastError.message)
+        console.log('[Search Mirror] ' + chrome.runtime.lastError.message)
       }
-    }
-    )
+    })
 
-    console.log('[Background Fetch] Added rule.')
+    console.log('[Search Mirror] Added rule.')
 
     registerMessageHandler('fetch_url_content', fetchURLContent)
   })

@@ -73,7 +73,88 @@
     const query = searchSite.extractQuery(window.location)
     const queryType = searchSite.extractQueryType(window.location)
 
-    if (queryType === 'web') {
+    if (queryType === 'image') {
+      const results = document.querySelectorAll('div[data-ved][data-ow][data-oh]')
+
+      results.forEach(function (element) {
+        const titles = element.querySelectorAll('h3')
+
+        if (titles.length > 0) {
+          const hrefs = element.querySelectorAll('a[target="_blank"]')
+
+          let href = null
+
+          hrefs.forEach(function (hrefElement) {
+            const url = hrefElement.getAttribute('href')
+
+            const lowerUrl = url.toLowerCase()
+
+            if (lowerUrl.startsWith('http://') || lowerUrl.startsWith('https://')) {
+              href = url
+            }
+          })
+
+          if (href !== null && me.linkCache[href] === undefined) {
+            let title = ''
+
+            titles.forEach(function (titleElement) {
+              titleElement.childNodes.forEach(function (childNode) {
+                if (childNode.nodeType === Node.TEXT_NODE) {
+                  title += childNode.nodeValue
+                }
+              })
+            })
+
+            let imageHref = null
+
+            const images = element.querySelectorAll('img[alt][width][height]')
+
+            images.forEach(function (image) {
+              if (image.getAttribute('src') !== null) {
+                imageHref = image.getAttribute('src')
+              }
+            })
+
+            const content = element.outerHTML
+
+            me.resultCount += 1
+
+            const payload = {
+              title,
+              link: href,
+              search_url: window.location.href,
+              'image_url@': imageHref,
+              content,
+              query,
+              type: queryType,
+              foreground: me.isPrimarySite,
+              engine: 'google',
+              index: me.resultCount
+            }
+
+            if (imageHref !== null) {
+              window.cookieManagerPopulateContent(imageHref, title, payload, 'image_url@', function () {
+                chrome.runtime.sendMessage({
+                  content: 'record_data_point',
+                  generator: 'search-mirror-result',
+                  payload: payload // eslint-disable-line object-shorthand
+                })
+              })
+            } else {
+              delete payload['image_url@']
+
+              chrome.runtime.sendMessage({
+                content: 'record_data_point',
+                generator: 'search-mirror-result',
+                payload: payload // eslint-disable-line object-shorthand
+              })
+            }
+
+            me.linkCache[href] = payload
+          }
+        }
+      })
+    } else if (queryType === 'web') {
       const results = document.querySelectorAll('a[href][data-ved][ping]')
 
       results.forEach(function (element) {
@@ -144,4 +225,4 @@
   }
 
   window.registerSearchMirrorSite('google', searchSite)
-})()
+})(); // eslint-disable-line semi, no-trailing-spaces

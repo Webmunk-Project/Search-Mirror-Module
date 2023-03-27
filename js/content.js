@@ -1,3 +1,5 @@
+/* global */
+
 (function () {
   window.searchMirrorSites = {}
 
@@ -76,4 +78,4 @@
       }
     }
   })
-})()
+})(); // eslint-disable-line semi, no-trailing-spaces

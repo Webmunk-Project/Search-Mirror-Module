@@ -28,15 +28,17 @@
   }
 
   searchSite.extractQueryType = function (location) {
-    if (location.pathname.startsWith === '/images/search') {
+    console.log('searchSite.extractQueryType: ' + location.pathname)
+
+    if (location.pathname.startsWith('/images/search')) {
       return 'image'
     }
 
-    if (location.pathname.startsWith === '/news/search') {
+    if (location.pathname.startsWith('/news/search')) {
       return 'news'
     }
 
-    if (location.pathname.startsWith === '/shop') {
+    if (location.pathname.startsWith('/shop')) {
       return 'shopping'
     }
 
@@ -64,6 +66,8 @@
 
     const query = searchSite.extractQuery(window.location)
     const queryType = searchSite.extractQueryType(window.location)
+
+    console.log('EXTRACT: ' + queryType + ' -- ' + query)
 
     if (queryType === 'web') {
       const results = document.querySelectorAll('li.b_algo')
@@ -133,8 +137,88 @@
           }
         }
       })
+    } else if (queryType === 'image') {
+      console.log('[Search Mirror / bing] Looking for images...')
+
+      const results = document.querySelectorAll('div.iuscp')
+
+      results.forEach(function (element) {
+        const titles = element.querySelectorAll('a[title]')
+
+        if (titles.length > 0) {
+          let title = ''
+          let href = null
+
+          titles.forEach(function (titleElement) {
+            title += titleElement.getAttribute('title')
+          })
+
+          const hrefs = element.querySelectorAll('a.iusc')
+
+          hrefs.forEach(function (hrefElement) {
+            const metadata = JSON.parse(hrefElement.getAttribute('m'))
+
+            if (metadata !== null) {
+              href = metadata.purl
+            }
+          })
+
+          let imageHref = null
+
+          const imageElements = element.querySelectorAll('img[alt]')
+
+          imageElements.forEach(function (imageElement) {
+            imageHref = imageElement.getAttribute('src')
+          })
+
+          if (href !== null && me.linkCache[href] === undefined) {
+            const content = element.outerHTML
+
+            me.resultCount += 1
+
+            const payload = {
+              title,
+              link: href,
+              search_url: window.location.href,
+              content,
+              query,
+              'image_url@': imageHref,
+              type: queryType,
+              foreground: me.isPrimarySite,
+              engine: 'bing',
+              index: me.resultCount
+            }
+
+            console.log('[Search Mirror / bing] Got result[' + me.resultCount + ']: ' + title)
+            console.log(payload)
+
+            if (imageHref !== null) {
+              window.cookieManagerPopulateContent(imageHref, title, payload, 'image_url@', function () {
+                console.log('[Search Mirror / bing] Sending:')
+                console.log(payload)
+
+                chrome.runtime.sendMessage({
+                  content: 'record_data_point',
+                  generator: 'search-mirror-result',
+                  payload: payload // eslint-disable-line object-shorthand
+                })
+              })
+            } else {
+              delete payload['image_url@']
+
+              chrome.runtime.sendMessage({
+                content: 'record_data_point',
+                generator: 'search-mirror-result',
+                payload: payload // eslint-disable-line object-shorthand
+              })
+            }
+
+            me.linkCache[href] = payload
+          }
+        }
+      })
     }
   }
 
   window.registerSearchMirrorSite('bing', searchSite)
-})()
+})(); // eslint-disable-line semi, no-trailing-spaces

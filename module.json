@@ -1,7 +1,10 @@
 {
   "name": "Search Mirror", 
   "service_worker_scripts": [
-    "js/worker.js"
+    "js/worker.js",
+    "js/sites/bing_worker.js",
+    "js/sites/duckduckgo_worker.js",
+    "js/sites/google_worker.js"
   ], 
   "content_scripts": [
     "js/content.js",
@@ -10,6 +13,7 @@
     "js/sites/duckduckgo.js"
   ], 
   "permissions": [
+    "webRequest",
     "declarativeNetRequestWithHostAccess"
   ],
   "host_permissions": [
