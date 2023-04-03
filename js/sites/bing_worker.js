@@ -1,6 +1,55 @@
-/* global chrome */
+/* global chrome, handleMessage */
 
 (function () {
+  const parseListItem = function (itemString) {
+    if (itemString.includes('pp_title')) {
+      const ppIndex = itemString.indexOf('pp_title')
+
+      const firstDiv = itemString.indexOf('>', ppIndex + 1)
+      const nextDiv = itemString.indexOf('</div>', firstDiv + 1)
+
+      const titleString = itemString.substring(firstDiv + 1, nextDiv)
+
+      const demoteIndex = itemString.indexOf('b_demoteText')
+
+      const firstDemoteDiv = itemString.indexOf('>', demoteIndex + 1)
+      const nextDemoteDiv = itemString.indexOf('</span>', firstDemoteDiv + 1)
+
+      const citeString = itemString.substring(firstDemoteDiv + 1, nextDemoteDiv)
+
+      return [titleString, citeString]
+    } else if (itemString.includes('sa_tm_text')) {
+      const termIndex = itemString.indexOf('sa_tm_text')
+
+      const firstDiv = itemString.indexOf('>', termIndex + 1)
+      const nextDiv = itemString.indexOf('</span>', firstDiv + 1)
+
+      const titleString = itemString.substring(firstDiv + 1, nextDiv)
+
+      return [titleString]
+    }
+
+    return null
+  }
+
+  const parseMatches = function (fullString) {
+    const listItems = fullString.split('</li>')
+
+    const matches = []
+
+    for (const listItem of listItems) {
+      if (listItem.includes('<li')) {
+        const match = parseListItem(listItem)
+
+        if (match !== null) {
+          matches.push(match)
+        }
+      }
+    }
+
+    return matches
+  }
+
   chrome.webRequest.onCompleted.addListener(async function (details) {
     if (details.initiator === undefined || details.initiator.includes('chrome-extension://')) {
       return
@@ -16,8 +65,6 @@
       const query = searchUrl.searchParams.get('qry')
 
       if (query !== null && query !== '') {
-        // console.log(details)
-
         fetch(details.url)
           .then(response => response.text())
           .then(function (data) {
@@ -28,60 +75,39 @@
               search_url: details.url
             }
 
-            console.log('DATA')
-            console.log(data)
-            console.log(payload)
+            const matches = parseMatches(data)
 
-            /*                  if (data.startsWith(')]}\'')) {
-                        data = data.substring(4)
+            const dataPayload = []
 
-                        const dataJson = JSON.parse(data)
+            for (const match of matches) {
+              if (match.length > 1) {
+                dataPayload.push({
+                  term: match[0],
+                  subtitle: match[1]
+                })
+              } else {
+                dataPayload.push({
+                  term: match[0]
+                })
+              }
+            }
 
-                        console.log(dataJson)
+            payload.suggestions = dataPayload
 
-                        const dataPayload = []
+            payload.raw_suggestions = data
 
-                        const suggestions = dataJson[0]
-
-                        suggestions.forEach(function(suggestion) {
-                            let subtitle = ''
-
-                            if (suggestion.length > 3) {
-                                subtitle = suggestion[3].zi
-                            }
-
-                            dataPayload.push({
-                                term: suggestion[0],
-                                subtitle: subtitle,
-                                data: suggestion
-                            })
-                        })
-
-                        console.log('[Search Mirror / bing] Data Payload (Parsed):')
-                        console.log(dataPayload)
-
-                        payload.suggestions = dataPayload
-                    } else {
-                        console.log('[Search Mirror / bing] Data Payload (Raw):')
-                        console.log(data)
-
-                        payload['raw_suggestions'] = data
-                    }
-
-                    handleMessage({
-                      content: 'record_data_point',
-                      generator: 'search-suggestions-result',
-                      payload: payload // eslint-disable-line object-shorthand
-                    }, {
-                        tab: {
-                            'id': details.tabId
-                        }
-                    }, function(logResponse) {
-                        // console.log('[Search Mirror / bing] Data Point Logged:')
-                        // console.log(logResponse)
-                    })
-
-*/
+            handleMessage({
+              content: 'record_data_point',
+              generator: 'search-suggestions-result',
+              payload: payload // eslint-disable-line object-shorthand
+            }, {
+              tab: {
+                id: details.tabId
+              }
+            }, function (logResponse) {
+              // console.log('[Search Mirror / bing] Data Point Logged:')
+              // console.log(logResponse)
+            })
           })
       }
     }

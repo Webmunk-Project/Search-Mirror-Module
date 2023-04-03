@@ -23,40 +23,58 @@
     return false
   }
 
-  registerCustomModule(function (config) {
-    console.log('[Background Fetch] Initialized.')
+  const stringToId = function (str) {
+    let id = str.length
 
-    const stringToId = function (str) {
-      let id = str.length
-      Array.from(str).forEach((it) => {
-        id += it.charCodeAt()
-      })
-      return id * 10000 + 6794
-    }
-
-    const stripRule = {
-      id: stringToId('strip'),
-      priority: 1,
-      action: {
-        type: 'modifyHeaders',
-        responseHeaders: [
-          { header: 'x-frame-options', operation: 'remove' },
-          { header: 'content-security-policy', operation: 'remove' }
-        ]
-      },
-      condition: { urlFilter: '*', resourceTypes: ['main_frame', 'sub_frame'] }
-    }
-
-    chrome.declarativeNetRequest.updateSessionRules({
-      addRules: [stripRule]
-    }, () => {
-      if (chrome.runtime.lastError) {
-        console.log('[Search Mirror] ' + chrome.runtime.lastError.message)
-      }
+    Array.from(str).forEach((it) => {
+      id += it.charCodeAt()
     })
 
-    console.log('[Search Mirror] Added rule.')
+    return id * 10000 + 6794
+  }
+
+  registerCustomModule(function (config) {
+    let urlFilters = [
+      '||bing.com/',
+      '||www.bing.com/',
+      '||google.com/',
+      '||www.google.com/',
+      '||duckduckgo.com/'
+    ]
+
+    if (config['search-mirror'] !== undefined) {
+      if (config['search-mirror']['url-filters'] !== undefined) {
+        urlFilters = config['search-mirror']['url-filters']
+      }
+    }
+
+    for (const urlFilter of urlFilters) {
+      const stripRule = {
+        id: stringToId('search-mirror-' + urlFilter),
+        priority: 1,
+        action: {
+          type: 'modifyHeaders',
+          responseHeaders: [
+            { header: 'x-frame-options', operation: 'remove' },
+            { header: 'content-security-policy', operation: 'remove' }
+          ]
+        },
+        condition: { urlFilter, resourceTypes: ['main_frame', 'sub_frame'] }
+      }
+
+      chrome.declarativeNetRequest.updateSessionRules({
+        addRules: [stripRule]
+      }, () => {
+        if (chrome.runtime.lastError) {
+          console.log('[Search Mirror] ' + chrome.runtime.lastError.message)
+        }
+      })
+
+      console.log('[Search Mirror] Added URL filter: ' + urlFilter)
+    }
 
     registerMessageHandler('fetch_url_content', fetchURLContent)
+
+    console.log('[Search Mirror] Initialized.')
   })
 })()
