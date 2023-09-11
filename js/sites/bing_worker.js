@@ -1,5 +1,3 @@
-/* global chrome, handleMessage */
-
 (function () {
   const parseListItem = function (itemString) {
     if (itemString.includes('pp_title')) {
@@ -96,7 +94,7 @@
 
             payload.raw_suggestions = data
 
-            handleMessage({
+            self.handleMessage({
               content: 'record_data_point',
               generator: 'search-suggestions-result',
               payload: payload // eslint-disable-line object-shorthand

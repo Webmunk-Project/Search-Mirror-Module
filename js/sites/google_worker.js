@@ -1,5 +1,3 @@
-/* global chrome, handleMessage */
-
 (function () {
   chrome.webRequest.onCompleted.addListener(async function (details) {
     if (details.initiator === undefined || details.initiator.includes('chrome-extension://')) {
@@ -62,7 +60,7 @@
               payload.raw_suggestions = data
             }
 
-            handleMessage({
+            self.handleMessage({
               content: 'record_data_point',
               generator: 'search-suggestions-result',
               payload: payload // eslint-disable-line object-shorthand
