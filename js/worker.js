@@ -1,5 +1,3 @@
-/* global chrome, registerCustomModule, registerMessageHandler */
-
 (function () {
   const fetchURLContent = function (request, sender, sendResponse) {
     console.log('[Search Mirror] Fetching ' + request.url + '...')
@@ -33,7 +31,7 @@
     return id * 10000 + 6794
   }
 
-  registerCustomModule(function (config) {
+  self.registerCustomModule(function (config) {
     let urlFilters = [
       '||bing.com/',
       '||www.bing.com/',
@@ -73,7 +71,7 @@
       console.log('[Search Mirror] Added URL filter: ' + urlFilter)
     }
 
-    registerMessageHandler('fetch_url_content', fetchURLContent)
+    self.registerMessageHandler('fetch_url_content', fetchURLContent)
 
     console.log('[Search Mirror] Initialized.')
   })
