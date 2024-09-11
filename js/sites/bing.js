@@ -28,8 +28,6 @@
   }
 
   searchSite.extractQueryType = function (location) {
-    console.log('searchSite.extractQueryType: ' + location.pathname)
-
     if (location.pathname.startsWith('/images/search')) {
       return 'image'
     }
@@ -66,8 +64,6 @@
 
     const query = searchSite.extractQuery(window.location)
     const queryType = searchSite.extractQueryType(window.location)
-
-    console.log('EXTRACT: ' + queryType + ' -- ' + query)
 
     if (queryType === 'web') {
       const results = document.querySelectorAll('li.b_algo')
@@ -190,13 +186,10 @@
             }
 
             console.log('[Search Mirror / bing] Got result[' + me.resultCount + ']: ' + title)
-            console.log(payload)
+            // console.log(payload)
 
             if (imageHref !== null) {
               window.cookieManagerPopulateContent(imageHref, title, payload, 'image_url@', function () {
-                console.log('[Search Mirror / bing] Sending:')
-                console.log(payload)
-
                 chrome.runtime.sendMessage({
                   content: 'record_data_point',
                   generator: 'search-mirror-result',

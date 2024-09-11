@@ -34,6 +34,10 @@
   }
 
   registerCustomModule(function (config) {
+    if (config === null || config === undefined) {
+      config = {}
+    }
+
     let urlFilters = [
       '||bing.com/',
       '||www.bing.com/',

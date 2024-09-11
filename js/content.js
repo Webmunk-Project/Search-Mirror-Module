@@ -8,73 +8,93 @@
   }
 
   window.registerModuleCallback(function (config) {
-    console.log('[Search Mirror] Checking if ' + window.location.href + ' is search site...')
+    let searchConfig = config['search-mirror']
 
-    const insertMirrorSite = function (identifier, location) {
-      const wrapper = document.createElement('div')
-
-      const htmlCode = '<iframe id="background_fetch_frame' + identifier + '" src="' + location + '" style="display: block; height: 40px; border: thin solid black; opacity: 1.0;"></iframe>'
-
-      wrapper.innerHTML = htmlCode
-
-      document.querySelector('body').appendChild(wrapper.firstChild)
-
-      console.log('[Search Mirror] Inserted ' + identifier + ' background search: ' + location)
+    if (searchConfig === undefined) {
+      searchConfig = {
+        enabled: true
+      }
     }
 
-    if (window.location === window.parent.location) { // Top frame
-      let matchedSearchSiteKey = null
+    if (searchConfig.enabled) {
+      // console.log('[Search Mirror] Checking if ' + window.location.href + ' is search site...')
 
-      for (const [siteKey, siteObject] of Object.entries(window.searchMirrorSites)) {
-        if (siteObject.matchesSearchSite(window.location)) {
-          matchedSearchSiteKey = siteKey
-        }
+      const insertMirrorSite = function (identifier, location) {
+        const wrapper = document.createElement('div')
+
+        const htmlCode = '<iframe id="background_fetch_frame' + identifier + '" src="' + location + '" style="display: block; height: 8px; opacity: 1.0;"></iframe>'
+
+        wrapper.innerHTML = htmlCode
+
+        document.querySelector('body').appendChild(wrapper.firstChild)
+
+        console.log('[Search Mirror] Inserted ' + identifier + ' background search: ' + location)
       }
 
-      if (matchedSearchSiteKey !== null) {
-        console.log('[Search Mirror] ' + window.location.href + ' is a search site (primary).')
-
-        const thisSearchSite = window.searchMirrorSites[matchedSearchSiteKey]
-
-        const query = thisSearchSite.extractQuery(window.location)
-        const queryType = thisSearchSite.extractQueryType(window.location)
+      if (window.location === window.parent.location) { // Top frame
+        let matchedSearchSiteKey = null
 
         for (const [siteKey, siteObject] of Object.entries(window.searchMirrorSites)) {
-          if (siteKey !== matchedSearchSiteKey) {
-            const existingFrame = document.getElementById('background_fetch_frame_' + siteKey)
-            const searchLocation = siteObject.searchUrl(query, queryType)
-
-            if (existingFrame === null && searchLocation !== null) {
-              insertMirrorSite(siteKey, searchLocation)
-            }
+          if (siteObject.matchesSearchSite(window.location)) {
+            matchedSearchSiteKey = siteKey
           }
         }
 
-        thisSearchSite.isPrimarySite = true
-
-        window.registerModulePageChangeListener(thisSearchSite.extractResults)
-      } else {
-        console.log('[Search Mirror] ' + window.location.href + ' is not a search site. (primary)')
-      }
-    } else {
-      let matchedSearchSiteKey = null
-
-      for (const [siteKey, siteObject] of Object.entries(window.searchMirrorSites)) {
-        if (siteObject.matchesSearchSite(window.location)) {
-          matchedSearchSiteKey = siteKey
+        if (searchConfig['primary-sites'] !== undefined && searchConfig['primary-sites'].includes(matchedSearchSiteKey) === false) {
+          matchedSearchSiteKey = null
         }
-      }
 
-      if (matchedSearchSiteKey !== null) {
-        console.log('[Search Mirror] ' + window.location.href + ' is a search site (secondary).')
+        if (matchedSearchSiteKey !== null) {
+          console.log('[Search Mirror] ' + window.location.href + ' is a search site (primary).')
 
-        const thisSearchSite = window.searchMirrorSites[matchedSearchSiteKey]
+          const thisSearchSite = window.searchMirrorSites[matchedSearchSiteKey]
 
-        thisSearchSite.isPrimarySite = false
+          const query = thisSearchSite.extractQuery(window.location)
+          const queryType = thisSearchSite.extractQueryType(window.location)
 
-        window.registerModulePageChangeListener(thisSearchSite.extractResults)
+          for (const [siteKey, siteObject] of Object.entries(window.searchMirrorSites)) {
+            if (siteKey !== matchedSearchSiteKey) {
+              const existingFrame = document.getElementById('background_fetch_frame_' + siteKey)
+              const searchLocation = siteObject.searchUrl(query, queryType)
+
+              if (searchConfig['secondary-sites'] !== undefined && searchConfig['secondary-sites'].includes(siteKey) === false) {
+                // Skip -- not enabled
+              } else if (existingFrame === null && searchLocation !== null) {
+                insertMirrorSite(siteKey, searchLocation)
+              }
+            }
+          }
+
+          thisSearchSite.isPrimarySite = true
+
+          window.registerModulePageChangeListener(thisSearchSite.extractResults)
+        } else {
+          // console.log('[Search Mirror] ' + window.location.href + ' is not a search site. (primary)')
+        }
       } else {
-        console.log('[Search Mirror] ' + window.location.href + ' is not a search site (secondary).')
+        let matchedSearchSiteKey = null
+
+        for (const [siteKey, siteObject] of Object.entries(window.searchMirrorSites)) {
+          if (siteObject.matchesSearchSite(window.location)) {
+            matchedSearchSiteKey = siteKey
+          }
+        }
+
+        if (searchConfig['secondary-sites'] !== undefined && searchConfig['secondary-sites'].includes(matchedSearchSiteKey) === false) {
+          matchedSearchSiteKey = null
+        }
+
+        if (matchedSearchSiteKey !== null) {
+          console.log('[Search Mirror] ' + window.location.href + ' is a search site (secondary).')
+
+          const thisSearchSite = window.searchMirrorSites[matchedSearchSiteKey]
+
+          thisSearchSite.isPrimarySite = false
+
+          window.registerModulePageChangeListener(thisSearchSite.extractResults)
+        } else {
+          // console.log('[Search Mirror] ' + window.location.href + ' is not a search site (secondary).')
+        }
       }
     }
   })

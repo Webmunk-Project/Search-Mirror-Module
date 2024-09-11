@@ -31,7 +31,7 @@
 
               const dataJson = JSON.parse(data)
 
-              console.log(dataJson)
+              // console.log(dataJson)
 
               const dataPayload = []
 
@@ -51,13 +51,13 @@
                 })
               })
 
-              console.log('[Search Mirror / google] Data Payload (Parsed):')
-              console.log(dataPayload)
+              // console.log('[Search Mirror / google] Data Payload (Parsed):')
+              // console.log(dataPayload)
 
               payload.suggestions = dataPayload
             } else {
-              console.log('[Search Mirror / google] Data Payload (Raw):')
-              console.log(data)
+              // console.log('[Search Mirror / google] Data Payload (Raw):')
+              // console.log(data)
 
               payload.raw_suggestions = data
             }

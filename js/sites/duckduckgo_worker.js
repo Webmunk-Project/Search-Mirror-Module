@@ -30,7 +30,7 @@
 
             const dataJson = JSON.parse(data)
 
-            console.log(dataJson)
+            // console.log(dataJson)
 
             const dataPayload = []
 
@@ -42,8 +42,8 @@
               })
             })
 
-            console.log('[Search Mirror / duckduckgo] Data Payload (Parsed):')
-            console.log(dataPayload)
+            // console.log('[Search Mirror / duckduckgo] Data Payload (Parsed):')
+            // console.log(dataPayload)
 
             payload.suggestions = dataPayload
 
